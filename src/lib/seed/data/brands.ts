@@ -1,0 +1,51 @@
+// 6 fictional brands (text-only wordmark per content-model §2.3).
+export const brandsSeed = [
+  {
+    slug: "haven",
+    name: "Haven",
+    description: { th: "บ้านในฝันของทุกคน", en: "Premium home comfort" },
+    country_of_origin: "Thailand",
+    featured: true,
+    display_order: 1,
+  },
+  {
+    slug: "arbor",
+    name: "Arbor",
+    description: { th: "งานไม้หัตถกรรม", en: "Natural wood & artisanal" },
+    country_of_origin: "Thailand",
+    featured: true,
+    display_order: 2,
+  },
+  {
+    slug: "kisho",
+    name: "Kisho",
+    description: { th: "ความเรียบง่ายแบบญี่ปุ่น", en: "Japanese minimalism" },
+    country_of_origin: "Japan",
+    featured: true,
+    display_order: 3,
+  },
+  {
+    slug: "luma",
+    name: "Luma",
+    description: { th: "โคมไฟเฉพาะทาง", en: "Lighting specialist" },
+    country_of_origin: "Italy",
+    featured: true,
+    display_order: 4,
+  },
+  {
+    slug: "aeris",
+    name: "Aeris",
+    description: { th: "อากาศบริสุทธิ์", en: "Air & cooling" },
+    country_of_origin: "Germany",
+    featured: true,
+    display_order: 5,
+  },
+  {
+    slug: "nimbus",
+    name: "Nimbus",
+    description: { th: "สมาร์ทโฮม IoT", en: "Smart home & IoT" },
+    country_of_origin: "South Korea",
+    featured: true,
+    display_order: 6,
+  },
+];
