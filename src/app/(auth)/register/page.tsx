@@ -1,14 +1,21 @@
+"use client";
+
 import Link from "next/link";
-import { Mail, Lock, User, Phone, Eye, ArrowRight, Check } from "lucide-react";
+import { useActionState } from "react";
+import { Mail, Lock, User, Phone, Eye, ArrowRight, Check, AlertCircle, Loader2 } from "lucide-react";
 import { IconFacebook, IconLine } from "@/components/icons/brand";
+import { registerAction, type AuthState } from "@/lib/actions/auth";
+
+const INITIAL_STATE: AuthState = {};
 
 export default function RegisterPage() {
+  const [state, formAction, pending] = useActionState(registerAction, INITIAL_STATE);
+
   return (
     <div>
       <h1 className="font-display font-bold text-3xl text-neutral-900 mb-2">สมัครสมาชิกฟรี</h1>
       <p className="text-sm text-neutral-500 mb-6">รับคูปอง ฿500 ทันที + สิทธิพิเศษสมาชิก Homesphere Card</p>
 
-      {/* Benefits strip */}
       <div className="mb-6 flex flex-wrap gap-2">
         {["฿500 คูปอง","ส่งฟรี","ผ่อน 0%","สะสมแต้ม"].map((b) => (
           <span key={b} className="text-[11px] bg-orange-50 text-orange-700 border border-orange-200 px-2.5 py-1 rounded-full font-semibold flex items-center gap-1">
@@ -17,7 +24,6 @@ export default function RegisterPage() {
         ))}
       </div>
 
-      {/* Social */}
       <div className="grid grid-cols-3 gap-3 mb-5">
         <SocialButton icon={<GoogleIcon />} label="Google" />
         <SocialButton icon={<IconFacebook className="w-5 h-5 text-[#1877F2]" />} label="Facebook" />
@@ -29,33 +35,40 @@ export default function RegisterPage() {
         <div className="flex-1 h-px bg-neutral-200" />
       </div>
 
-      <form className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="ชื่อ" icon={User} placeholder="สมชาย" autoComplete="given-name" />
-          <Field label="นามสกุล" icon={User} placeholder="ใจดี" autoComplete="family-name" />
+      {state.error && (
+        <div className="mb-4 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{state.error}</span>
         </div>
-        <Field label="อีเมล" icon={Mail} type="email" placeholder="your@email.com" autoComplete="email" />
-        <Field label="เบอร์โทรศัพท์" icon={Phone} type="tel" placeholder="081-234-5678" autoComplete="tel" />
-        <Field label="รหัสผ่าน" icon={Lock} type="password" placeholder="อย่างน้อย 8 ตัวอักษร" autoComplete="new-password" rightIcon={Eye} hint="ต้องมีตัวพิมพ์ใหญ่ + ตัวเลข" />
+      )}
 
-        {/* Consents */}
+      <form action={formAction} className="space-y-4">
+        <Field name="full_name" label="ชื่อ-นามสกุล" icon={User} placeholder="สมชาย ใจดี" autoComplete="name" required />
+        <Field name="email" label="อีเมล" icon={Mail} type="email" placeholder="your@email.com" autoComplete="email" required />
+        <Field name="phone" label="เบอร์โทรศัพท์" icon={Phone} type="tel" placeholder="081-234-5678" autoComplete="tel" />
+        <Field name="password" label="รหัสผ่าน" icon={Lock} type="password" placeholder="อย่างน้อย 6 ตัวอักษร" autoComplete="new-password" rightIcon={Eye} hint="ควรมีตัวพิมพ์ใหญ่ + ตัวเลข เพื่อความปลอดภัย" required />
+
         <div className="space-y-2 pt-2">
           <label className="flex items-start gap-2.5 cursor-pointer text-sm">
-            <input type="checkbox" defaultChecked className="mt-0.5 accent-primary-600" />
+            <input type="checkbox" name="pdpa" defaultChecked className="mt-0.5 accent-primary-600" />
             <span className="text-neutral-600 text-xs leading-relaxed">
               ฉันยอมรับ <Link href="/terms" className="text-primary-600 hover:underline">ข้อตกลงการใช้บริการ</Link> และ <Link href="/policy" className="text-primary-600 hover:underline">นโยบายความเป็นส่วนตัว (PDPA)</Link>
             </span>
           </label>
           <label className="flex items-start gap-2.5 cursor-pointer text-sm">
-            <input type="checkbox" defaultChecked className="mt-0.5 accent-primary-600" />
+            <input type="checkbox" name="marketing" defaultChecked className="mt-0.5 accent-primary-600" />
             <span className="text-neutral-600 text-xs leading-relaxed">
               ยินยอมรับข่าวสารโปรโมชั่น + ส่วนลดพิเศษผ่านอีเมลและ SMS
             </span>
           </label>
         </div>
 
-        <button className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl inline-flex items-center justify-center gap-2 transition">
-          สมัครสมาชิก + รับคูปอง ฿500 <ArrowRight className="w-4 h-4" />
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-semibold py-3 rounded-xl inline-flex items-center justify-center gap-2 transition"
+        >
+          {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <>สมัครสมาชิก + รับคูปอง ฿500 <ArrowRight className="w-4 h-4" /></>}
         </button>
       </form>
 
@@ -67,12 +80,13 @@ export default function RegisterPage() {
 }
 
 function Field({
-  label, icon: Icon, rightIcon: RightIcon, type = "text", placeholder, autoComplete, hint,
+  name, label, icon: Icon, rightIcon: RightIcon, type = "text", placeholder, autoComplete, hint, required,
 }: {
+  name: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   rightIcon?: React.ComponentType<{ className?: string }>;
-  type?: string; placeholder?: string; autoComplete?: string; hint?: string;
+  type?: string; placeholder?: string; autoComplete?: string; hint?: string; required?: boolean;
 }) {
   return (
     <label className="block">
@@ -80,7 +94,8 @@ function Field({
       <div className="relative">
         <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <input
-          type={type} placeholder={placeholder} autoComplete={autoComplete}
+          name={name}
+          type={type} placeholder={placeholder} autoComplete={autoComplete} required={required}
           className="w-full border border-neutral-200 rounded-xl pl-10 pr-10 py-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
         />
         {RightIcon && (
@@ -96,7 +111,7 @@ function Field({
 
 function SocialButton({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <button className="flex items-center justify-center gap-2 border border-neutral-200 rounded-xl py-2.5 text-sm hover:border-neutral-400 hover:bg-neutral-50 transition">
+    <button type="button" className="flex items-center justify-center gap-2 border border-neutral-200 rounded-xl py-2.5 text-sm hover:border-neutral-400 hover:bg-neutral-50 transition">
       {icon}
       <span className="hidden sm:inline">{label}</span>
     </button>

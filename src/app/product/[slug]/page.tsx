@@ -1,100 +1,66 @@
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import {
   ChevronRight, Heart, Share2, Star, Truck, Wrench, Store, CreditCard,
   BadgeCheck, Shield, RefreshCcw, Check, Minus, Plus, ShoppingCart, Zap,
-  MapPin, Package, MessageCircle, ThumbsUp, Wind,
+  MapPin, Package, MessageCircle, ThumbsUp, Wind, Refrigerator, LampCeiling,
+  Bed, Armchair, ShowerHead, Microwave, Camera, Library, Droplet, UtensilsCrossed,
+  Hammer, Trees, type LucideIcon,
 } from "lucide-react";
 import { AnnouncementBar, SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ProductCard } from "@/components/product-card";
-import { Armchair, Refrigerator, LampCeiling, Bed, Microwave } from "lucide-react";
+import { getProductBySlug, getRelatedProducts } from "@/lib/queries/product";
 
-/* ============================================================
-   PRODUCT DETAIL (PDP) — /product/[slug]
-============================================================ */
+function iconForProduct(slug: string): LucideIcon {
+  if (slug.includes("aircon") || slug.includes("fan") || slug.includes("air")) return Wind;
+  if (slug.includes("fridge") || slug.includes("refrigerator")) return Refrigerator;
+  if (slug.includes("lamp") || slug.includes("light") || slug.includes("pendant")) return LampCeiling;
+  if (slug.includes("bed") || slug.includes("mattress")) return Bed;
+  if (slug.includes("sofa") || slug.includes("chair") || slug.includes("armchair")) return Armchair;
+  if (slug.includes("microwave") || slug.includes("fryer") || slug.includes("oven")) return Microwave;
+  if (slug.includes("shower") || slug.includes("faucet") || slug.includes("toilet")) return ShowerHead;
+  if (slug.includes("drill") || slug.includes("ladder") || slug.includes("hammer")) return Hammer;
+  if (slug.includes("cctv") || slug.includes("camera") || slug.includes("lock")) return Camera;
+  if (slug.includes("filter") || slug.includes("water")) return Droplet;
+  if (slug.includes("kitchen") || slug.includes("pot") || slug.includes("pan") || slug.includes("dining")) return UtensilsCrossed;
+  if (slug.includes("shelf") || slug.includes("bookshelf")) return Library;
+  if (slug.includes("patio") || slug.includes("garden")) return Trees;
+  return Package;
+}
 
-const PRODUCT = {
-  slug: "aeris-aircon-12000btu",
-  title: "แอร์ Aeris 12000 BTU Inverter รุ่น AR-I12",
-  titleEn: "Aeris Inverter Air Conditioner 12000 BTU",
-  brand: "Aeris",
-  category: { slug: "appliances", label: "เครื่องใช้ไฟฟ้า" },
-  sub: { slug: "air-conditioner", label: "เครื่องปรับอากาศ" },
-  sku: "HS-APP-AER-001",
-  price: 9990,
-  original: 15900,
-  discount: 37,
-  rating: 4.6,
-  reviews: 289,
-  sold: 1247,
-  stock: 23,
-  images: [
-    "/seed/flash-sale/aeris-aircon.png",
-    "/seed/flash-sale/aeris-aircon.png",
-    "/seed/flash-sale/aeris-aircon.png",
-    "/seed/flash-sale/aeris-aircon.png",
-    "/seed/flash-sale/aeris-aircon.png",
-  ],
-  variants: {
-    btu: [
-      { label: "9,000 BTU", value: "9000", price: 8490, available: true },
-      { label: "12,000 BTU", value: "12000", price: 9990, available: true, selected: true },
-      { label: "18,000 BTU", value: "18000", price: 14900, available: true },
-      { label: "24,000 BTU", value: "24000", price: 18900, available: false },
-    ],
-    color: [
-      { label: "ขาว", value: "white", selected: true },
-      { label: "เทา", value: "gray" },
-    ],
-  },
-  services: [
-    { icon: Truck, label: "ส่งฟรีกรุงเทพ", sub: "ภายใน 2-3 วัน" },
-    { icon: Wrench, label: "ฟรีติดตั้ง", sub: "ช่างประจำสาขา" },
-    { icon: CreditCard, label: "ผ่อน 0%", sub: "นาน 10 เดือน" },
-    { icon: Shield, label: "ประกันศูนย์", sub: "1 ปีเต็ม" },
-    { icon: RefreshCcw, label: "คืนสินค้า", sub: "ภายใน 14 วัน" },
-    { icon: Store, label: "รับที่สาขา", sub: "120+ สาขาทั่วไทย" },
-  ],
-  specs: [
-    { k: "แบรนด์", v: "Aeris" },
-    { k: "รุ่น", v: "AR-I12" },
-    { k: "ระบบ", v: "Inverter R32" },
-    { k: "ขนาด BTU", v: "12,000 BTU" },
-    { k: "พื้นที่แนะนำ", v: "14-20 ตร.ม." },
-    { k: "ค่าประสิทธิภาพ SEER", v: "18.5" },
-    { k: "ระดับเสียง", v: "20 dB" },
-    { k: "ตัวกรอง", v: "PM 2.5 + Ionizer" },
-    { k: "ประกัน", v: "เครื่อง 1 ปี · คอมเพรสเซอร์ 5 ปี" },
-    { k: "น้ำหนัก", v: "9.5 kg (ตัวใน) + 32 kg (ตัวนอก)" },
-  ],
-  features: [
-    "ประหยัดไฟเบอร์ 5 · ค่าไฟถูกกว่าเดิมสูงสุด 40%",
-    "ฟิลเตอร์ PM 2.5 กรองฝุ่นละออง",
-    "ระบบทำความเย็นเร็ว Cool Turbo ภายใน 30 วินาที",
-    "เสียงเบา 20 dB เหมาะกับห้องนอน",
-    "รองรับ Smart Home — สั่งผ่าน LINE / แอป",
-  ],
-  description:
-    "แอร์ Aeris 12000 BTU ระบบ Inverter R32 ประหยัดไฟและเป็นมิตรกับสิ่งแวดล้อม มาพร้อมฟิลเตอร์ PM 2.5 กรองฝุ่นละออง และระบบทำความเย็นเร็ว Cool Turbo ที่เย็นทันใจภายใน 30 วินาที เหมาะสำหรับห้องขนาด 14-20 ตร.ม. เช่น ห้องนอน ห้องทำงาน หรือห้องรับแขกขนาดกะทัดรัด",
-};
-
-const REVIEWS = [
-  { user: "สมหมาย ใจดี", date: "2026-04-10", rating: 5, title: "เย็นไว เงียบมาก", body: "ใช้ได้ 2 สัปดาห์แล้ว เย็นเร็วจริง ๆ เงียบด้วย ค่าไฟก็ลดลงจริงตามโฆษณา คุ้มค่ามาก", helpful: 42, verified: true },
-  { user: "ณัฐวุฒิ ช่างฝัน", date: "2026-04-08", rating: 5, title: "ติดตั้งดี บริการหลังการขาย OK", body: "ช่างของ Homesphere มาติดตั้งตรงเวลา ให้คำแนะนำดี ทดสอบให้เสร็จสรรพ ประทับใจ", helpful: 28, verified: true },
-  { user: "ปวีณา สุขใจ", date: "2026-04-03", rating: 4, title: "ดีแต่ตัวนอกใหญ่ไปนิด", body: "เย็นไวและประหยัดไฟจริง แต่ตัวนอกขนาดใหญ่กว่าที่คิด ต้องวางระเบียงใหญ่ ๆ หน่อย", helpful: 14, verified: true },
-];
-
-const RELATED = [
-  { icon: Wind, name: "พัดลมตั้งพื้น Aeris 16''", price: 1990, rating: 4.6, reviews: 89 },
-  { icon: Refrigerator, name: "ตู้เย็น Stella 7.6Q", price: 8490, original: 12900, rating: 4.5, reviews: 76, badge: "-34%" },
-  { icon: LampCeiling, name: "โคมเพดาน Luma 24W", price: 1990, rating: 4.7, reviews: 154 },
-  { icon: Bed, name: "ที่นอน Haven 6 ฟุต", price: 14900, rating: 4.9, reviews: 201 },
-  { icon: Microwave, name: "เครื่องกรองอากาศ Aeris", price: 6990, rating: 4.8, reviews: 63 },
+const REVIEWS_MOCK = [
+  { user: "สมหมาย ใจดี", date: "2026-04-10", rating: 5, title: "คุ้มค่ามาก", body: "ใช้งานได้ดีเกินคาด ส่งเร็ว ติดตั้งฟรี คุ้มราคา แนะนำเลยครับ", helpful: 42, verified: true },
+  { user: "ณัฐวุฒิ ช่างฝัน", date: "2026-04-08", rating: 5, title: "บริการดี", body: "ช่างของ Homesphere มาติดตั้งตรงเวลา ให้คำแนะนำดี ประทับใจ", helpful: 28, verified: true },
+  { user: "ปวีณา สุขใจ", date: "2026-04-03", rating: 4, title: "คุณภาพดี", body: "ของดีมีคุณภาพ ตามรีวิวเลย ราคาคุ้มค่า ใช้มาเดือนกว่ายังไม่มีปัญหา", helpful: 14, verified: true },
 ];
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
-  await params;
-  const p = PRODUCT;
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+  if (!product) notFound();
+
+  const related = product.category
+    ? await getRelatedProducts(product.category.id, product.id, 5)
+    : [];
+
+  const services = [
+    { icon: Truck, label: "ส่งฟรีกรุงเทพ", sub: "ภายใน 2-3 วัน" },
+    { icon: Wrench, label: "ฟรีติดตั้ง", sub: "ช่างประจำสาขา" },
+    { icon: CreditCard, label: "ผ่อน 0%", sub: "นาน 10 เดือน" },
+    { icon: Shield, label: "ประกันศูนย์", sub: `${Math.max(1, Math.round(product.warranty_months / 12))} ปีเต็ม` },
+    { icon: RefreshCcw, label: "คืนสินค้า", sub: "ภายใน 14 วัน" },
+    { icon: Store, label: "รับที่สาขา", sub: "120+ สาขาทั่วไทย" },
+  ];
+
+  const currentPrice =
+    product.is_flash_sale && product.flash_sale_price != null ? product.flash_sale_price : product.base_price;
+  const originalPrice = product.compare_at_price ?? product.base_price;
+  const hasDiscount = product.discount_percent > 0;
+
+  const ProductIcon = iconForProduct(product.slug);
+  const galleryImages = product.gallery.length > 0 ? product.gallery : [];
+  const mainImage = galleryImages[0] ?? (product.slug.includes("aircon") ? "/seed/flash-sale/aeris-aircon.png" : null);
 
   return (
     <>
@@ -106,11 +72,13 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="max-w-[1440px] mx-auto px-6 py-3 flex items-center gap-2 text-sm text-neutral-600">
             <a href="/" className="hover:text-primary-600">หน้าแรก</a>
             <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
-            <a href={`/category/${p.category.slug}`} className="hover:text-primary-600">{p.category.label}</a>
-            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
-            <a href="#" className="hover:text-primary-600">{p.sub.label}</a>
-            <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
-            <span className="text-neutral-900 line-clamp-1">{p.title}</span>
+            {product.category && (
+              <>
+                <a href={`/category/${product.category.slug}`} className="hover:text-primary-600">{product.category.title_th}</a>
+                <ChevronRight className="w-3.5 h-3.5 text-neutral-400" />
+              </>
+            )}
+            <span className="text-neutral-900 line-clamp-1">{product.title_th}</span>
           </div>
         </div>
 
@@ -118,21 +86,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <div className="max-w-[1440px] mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[1fr_520px] gap-8">
           {/* Gallery */}
           <div>
-            <div className="aspect-square bg-white rounded-2xl border border-neutral-200 overflow-hidden relative">
-              <Image src={p.images[0]} alt={p.title} fill sizes="(max-width: 1024px) 100vw, 920px" className="object-cover" priority />
-              <span className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-lg z-10">-{p.discount}%</span>
+            <div className="aspect-square bg-white rounded-2xl border border-neutral-200 overflow-hidden relative grid place-items-center">
+              {mainImage ? (
+                <Image src={mainImage} alt={product.title_th} fill sizes="(max-width: 1024px) 100vw, 920px" className="object-cover" priority />
+              ) : (
+                <ProductIcon className="w-40 h-40 text-neutral-300" strokeWidth={1.2} />
+              )}
+              {hasDiscount && (
+                <span className="absolute top-4 left-4 bg-red-500 text-white text-sm font-bold px-3 py-1 rounded-lg z-10">-{product.discount_percent}%</span>
+              )}
               <div className="absolute top-4 right-4 flex gap-2 z-10">
                 <button className="w-10 h-10 rounded-full bg-white shadow grid place-items-center hover:bg-red-50 hover:text-red-500"><Heart className="w-5 h-5" /></button>
                 <button className="w-10 h-10 rounded-full bg-white shadow grid place-items-center hover:bg-primary-50 hover:text-primary-600"><Share2 className="w-5 h-5" /></button>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-5 gap-2">
-              {p.images.map((src, i) => (
-                <button key={i} className={`aspect-square rounded-lg overflow-hidden relative border-2 ${i===0 ? "border-primary-600" : "border-neutral-200 hover:border-primary-300"}`}>
-                  <Image src={src} alt="" fill sizes="120px" className="object-cover" />
-                </button>
-              ))}
-            </div>
+            {galleryImages.length > 1 && (
+              <div className="mt-3 grid grid-cols-5 gap-2">
+                {galleryImages.slice(0, 5).map((src, i) => (
+                  <button key={i} className={`aspect-square rounded-lg overflow-hidden relative border-2 ${i===0 ? "border-primary-600" : "border-neutral-200 hover:border-primary-300"}`}>
+                    <Image src={src} alt="" fill sizes="120px" className="object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Info panel */}
@@ -140,65 +116,53 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {/* Title + brand + rating */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <a href="#" className="text-primary-600 text-sm font-semibold hover:underline">{p.brand}</a>
+                {product.brand && (
+                  <a href="#" className="text-primary-600 text-sm font-semibold hover:underline">{product.brand.name}</a>
+                )}
                 <span className="text-neutral-300">·</span>
-                <span className="text-xs text-neutral-500">SKU: {p.sku}</span>
+                <span className="text-xs text-neutral-500">SKU: {product.sku}</span>
               </div>
-              <h1 className="font-display font-bold text-2xl text-neutral-900 leading-tight">{p.title}</h1>
-              <p className="text-sm text-neutral-500 mt-1">{p.titleEn}</p>
+              <h1 className="font-display font-bold text-2xl text-neutral-900 leading-tight">{product.title_th}</h1>
+              {product.title_en && <p className="text-sm text-neutral-500 mt-1">{product.title_en}</p>}
               <div className="flex items-center gap-4 mt-3 text-sm">
                 <div className="flex items-center gap-1">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className={`w-4 h-4 ${i < Math.floor(p.rating) ? "fill-orange-500 text-orange-500" : "text-neutral-300"}`} />
+                    <Star key={i} className={`w-4 h-4 ${i < Math.floor(product.rating_average) ? "fill-orange-500 text-orange-500" : "text-neutral-300"}`} />
                   ))}
-                  <span className="ml-1 font-semibold">{p.rating}</span>
+                  <span className="ml-1 font-semibold">{product.rating_average.toFixed(1)}</span>
                 </div>
-                <span className="text-neutral-600 hover:text-primary-600 cursor-pointer"><span className="underline">{p.reviews}</span> รีวิว</span>
-                <span className="text-neutral-500">ขายแล้ว {p.sold.toLocaleString()}</span>
+                <span className="text-neutral-600 hover:text-primary-600 cursor-pointer"><span className="underline">{product.rating_count}</span> รีวิว</span>
+                <span className="text-neutral-500">ขายแล้ว {product.sales_count.toLocaleString()}</span>
               </div>
             </div>
 
             {/* Price */}
-            <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 rounded-2xl p-5">
-              <div className="flex items-baseline gap-3">
-                <span className="text-red-600 font-display font-extrabold text-4xl">฿{p.price.toLocaleString()}</span>
-                <span className="text-lg text-neutral-500 line-through">฿{p.original.toLocaleString()}</span>
-                <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">ประหยัด ฿{(p.original - p.price).toLocaleString()}</span>
+            <div className={`border rounded-2xl p-5 ${hasDiscount ? "bg-gradient-to-br from-red-50 to-orange-50 border-red-200" : "bg-neutral-50 border-neutral-200"}`}>
+              <div className="flex items-baseline gap-3 flex-wrap">
+                <span className={`font-display font-extrabold text-4xl ${hasDiscount ? "text-red-600" : "text-primary-700"}`}>
+                  ฿{currentPrice.toLocaleString()}
+                </span>
+                {hasDiscount && (
+                  <>
+                    <span className="text-lg text-neutral-500 line-through">฿{originalPrice.toLocaleString()}</span>
+                    <span className="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded">
+                      ประหยัด ฿{(originalPrice - currentPrice).toLocaleString()}
+                    </span>
+                  </>
+                )}
               </div>
-              <p className="text-xs text-neutral-600 mt-2">ราคารวม VAT · ผ่อน 0% เริ่มต้น ฿999/เดือน · Flash Sale เหลือ <span className="font-mono font-bold text-red-600">23:59:42</span></p>
+              <p className="text-xs text-neutral-600 mt-2">
+                ราคารวม VAT · ผ่อน 0% เริ่มต้น ฿{Math.max(1, Math.round(currentPrice / 10)).toLocaleString()}/เดือน
+                {product.is_flash_sale && (
+                  <> · Flash Sale เหลือ <span className="font-mono font-bold text-red-600">23:59:42</span></>
+                )}
+              </p>
             </div>
 
-            {/* Variant — BTU */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold">ขนาด BTU: <span className="text-primary-700">12,000 BTU</span></span>
-                <button className="text-xs text-primary-600 hover:underline">คู่มือเลือกขนาด</button>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {p.variants.btu.map((v) => (
-                  <button key={v.value} disabled={!v.available} className={`border rounded-lg px-3 py-2 text-sm text-left transition ${
-                    v.selected ? "border-primary-600 bg-primary-50 text-primary-700 font-semibold" :
-                    v.available ? "border-neutral-200 hover:border-primary-400" :
-                    "border-neutral-200 text-neutral-300 cursor-not-allowed line-through"}`}>
-                    <div>{v.label}</div>
-                    <div className="text-xs text-neutral-500 mt-0.5">฿{v.price.toLocaleString()}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Variant — Color */}
-            <div>
-              <span className="text-sm font-semibold block mb-2">สี: <span className="text-primary-700">ขาว</span></span>
-              <div className="flex gap-2">
-                {p.variants.color.map((c) => (
-                  <button key={c.value} className={`border rounded-lg px-4 py-2 text-sm transition ${
-                    c.selected ? "border-primary-600 bg-primary-50 text-primary-700 font-semibold" : "border-neutral-200 hover:border-primary-400"}`}>
-                    {c.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Short description */}
+            {product.short_description_th && (
+              <p className="text-sm text-neutral-700 leading-relaxed">{product.short_description_th}</p>
+            )}
 
             {/* Quantity + stock */}
             <div className="flex items-center gap-4 pt-2 border-t border-neutral-200">
@@ -208,15 +172,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <input type="text" defaultValue="1" className="w-12 h-10 text-center text-sm outline-none" />
                 <button className="w-10 h-10 grid place-items-center hover:bg-neutral-50"><Plus className="w-4 h-4" /></button>
               </div>
-              <span className="text-xs text-neutral-500">มีสินค้า {p.stock} ชิ้น</span>
+              <span className="text-xs text-neutral-500">
+                {product.stock_quantity > 0 ? `มีสินค้า ${product.stock_quantity} ชิ้น` : "สินค้าหมด"}
+              </span>
             </div>
 
             {/* CTA buttons */}
             <div className="flex gap-3">
-              <button className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 rounded-xl inline-flex items-center justify-center gap-2 transition">
+              <button
+                disabled={product.stock_quantity === 0}
+                className="flex-1 bg-primary-600 hover:bg-primary-700 disabled:bg-neutral-300 text-white font-semibold py-4 rounded-xl inline-flex items-center justify-center gap-2 transition"
+              >
                 <ShoppingCart className="w-5 h-5" /> เพิ่มลงตะกร้า
               </button>
-              <button className="flex-1 bg-red-500 hover:bg-red-600 text-white font-semibold py-4 rounded-xl inline-flex items-center justify-center gap-2 transition">
+              <button
+                disabled={product.stock_quantity === 0}
+                className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-neutral-300 text-white font-semibold py-4 rounded-xl inline-flex items-center justify-center gap-2 transition"
+              >
                 <Zap className="w-5 h-5" /> ซื้อเลย
               </button>
             </div>
@@ -246,7 +218,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         {/* Service callout bar */}
         <div className="max-w-[1440px] mx-auto px-6">
           <div className="bg-white border border-neutral-200 rounded-2xl px-5 py-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {p.services.map((s, i) => (
+            {services.map((s, i) => (
               <div key={i} className="flex items-center gap-2 text-sm">
                 <s.icon className="w-5 h-5 text-primary-600 shrink-0" />
                 <div className="leading-tight">
@@ -260,62 +232,66 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         {/* Tabs: Description / Specs / Reviews */}
         <div className="max-w-[1440px] mx-auto px-6 py-10 grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-          {/* Left: tabs content */}
           <div className="bg-white rounded-2xl border border-neutral-200">
             <div className="border-b border-neutral-200 flex overflow-x-auto">
-              {["รายละเอียด", "สเปคสินค้า", `รีวิว (${p.reviews})`, "คำถาม-ตอบ", "รับประกัน"].map((t, i) => (
+              {["รายละเอียด", "สเปคสินค้า", `รีวิว (${product.rating_count})`, "คำถาม-ตอบ", "รับประกัน"].map((t, i) => (
                 <button key={t} className={`px-6 py-4 text-sm font-medium whitespace-nowrap border-b-2 transition ${i===0 ? "border-primary-600 text-primary-700" : "border-transparent text-neutral-600 hover:text-primary-600"}`}>{t}</button>
               ))}
             </div>
             <div className="p-6 space-y-6">
               {/* Description */}
-              <section>
-                <h3 className="font-display font-bold text-lg mb-2">รายละเอียดสินค้า</h3>
-                <p className="text-sm text-neutral-700 leading-relaxed">{p.description}</p>
-              </section>
+              {product.description_th && (
+                <section>
+                  <h3 className="font-display font-bold text-lg mb-2">รายละเอียดสินค้า</h3>
+                  <p className="text-sm text-neutral-700 leading-relaxed whitespace-pre-line">{product.description_th}</p>
+                </section>
+              )}
 
               {/* Features */}
-              <section>
-                <h3 className="font-display font-bold text-lg mb-3">คุณสมบัติเด่น</h3>
-                <ul className="space-y-2">
-                  {p.features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-neutral-700">
-                      <Check className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+              {product.features.length > 0 && (
+                <section>
+                  <h3 className="font-display font-bold text-lg mb-3">คุณสมบัติเด่น</h3>
+                  <ul className="space-y-2">
+                    {product.features.map((f, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-neutral-700">
+                        <Check className="w-4 h-4 text-primary-600 mt-0.5 shrink-0" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )}
 
               {/* Specs */}
-              <section>
-                <h3 className="font-display font-bold text-lg mb-3">สเปคสินค้า</h3>
-                <dl className="divide-y divide-neutral-100 text-sm">
-                  {p.specs.map((s, i) => (
-                    <div key={i} className="flex py-2.5">
-                      <dt className="w-40 text-neutral-500 shrink-0">{s.k}</dt>
-                      <dd className="text-neutral-800 font-medium">{s.v}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </section>
+              {product.specs.length > 0 && (
+                <section>
+                  <h3 className="font-display font-bold text-lg mb-3">สเปคสินค้า</h3>
+                  <dl className="divide-y divide-neutral-100 text-sm">
+                    {product.specs.map((s, i) => (
+                      <div key={i} className="flex py-2.5">
+                        <dt className="w-40 text-neutral-500 shrink-0">{s.k}</dt>
+                        <dd className="text-neutral-800 font-medium">{s.v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              )}
 
               {/* Reviews */}
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-display font-bold text-lg">รีวิว ({p.reviews})</h3>
+                  <h3 className="font-display font-bold text-lg">รีวิว ({product.rating_count})</h3>
                   <button className="text-sm text-primary-600 font-medium hover:underline">เขียนรีวิว</button>
                 </div>
-                {/* Rating summary */}
                 <div className="bg-gradient-to-br from-primary-50 to-primary-100/30 rounded-xl p-4 mb-4 flex items-center gap-6">
                   <div className="text-center">
-                    <div className="font-display font-bold text-4xl text-primary-700">{p.rating}</div>
+                    <div className="font-display font-bold text-4xl text-primary-700">{product.rating_average.toFixed(1)}</div>
                     <div className="flex justify-center mt-1">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 ${i < Math.round(p.rating) ? "fill-orange-500 text-orange-500" : "text-neutral-300"}`} />
+                        <Star key={i} className={`w-4 h-4 ${i < Math.round(product.rating_average) ? "fill-orange-500 text-orange-500" : "text-neutral-300"}`} />
                       ))}
                     </div>
-                    <div className="text-xs text-neutral-500 mt-1">{p.reviews} รีวิว</div>
+                    <div className="text-xs text-neutral-500 mt-1">{product.rating_count} รีวิว</div>
                   </div>
                   <div className="flex-1 space-y-1">
                     {[5,4,3,2,1].map((star, i) => {
@@ -333,9 +309,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     })}
                   </div>
                 </div>
-                {/* Review list */}
                 <div className="space-y-5">
-                  {REVIEWS.map((r, i) => (
+                  {REVIEWS_MOCK.map((r, i) => (
                     <div key={i} className="pb-5 border-b border-neutral-100 last:border-0">
                       <div className="flex items-center justify-between mb-1">
                         <div className="flex items-center gap-2">
@@ -348,8 +323,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         <span className="text-xs text-neutral-400">{r.date}</span>
                       </div>
                       <div className="flex items-center gap-1 mb-1 ml-10">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star key={i} className={`w-3.5 h-3.5 ${i < r.rating ? "fill-orange-500 text-orange-500" : "text-neutral-300"}`} />
+                        {Array.from({ length: 5 }).map((_, j) => (
+                          <Star key={j} className={`w-3.5 h-3.5 ${j < r.rating ? "fill-orange-500 text-orange-500" : "text-neutral-300"}`} />
                         ))}
                       </div>
                       <div className="ml-10">
@@ -374,37 +349,27 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           </div>
 
-          {/* Sticky right: store info + trust signals */}
+          {/* Sticky right */}
           <aside className="space-y-4">
-            <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-              <div className="flex items-center gap-3">
-                <span className="w-12 h-12 rounded-lg bg-primary-50 grid place-items-center font-display font-bold text-primary-600">A</span>
-                <div>
-                  <div className="font-semibold">{p.brand}</div>
-                  <div className="text-xs text-neutral-500">Official Store · 4.8 ★</div>
-                </div>
-                <button className="ml-auto px-3 py-1.5 border border-primary-600 text-primary-600 rounded-lg text-xs font-medium hover:bg-primary-50">ดูร้าน</button>
-              </div>
-              <div className="grid grid-cols-3 mt-4 pt-4 border-t border-neutral-100 text-center text-xs">
-                <div>
-                  <div className="font-bold text-primary-700">156</div>
-                  <div className="text-neutral-500">สินค้า</div>
-                </div>
-                <div>
-                  <div className="font-bold text-primary-700">4.8</div>
-                  <div className="text-neutral-500">คะแนน</div>
-                </div>
-                <div>
-                  <div className="font-bold text-primary-700">98%</div>
-                  <div className="text-neutral-500">ตอบไว</div>
+            {product.brand && (
+              <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+                <div className="flex items-center gap-3">
+                  <span className="w-12 h-12 rounded-lg bg-primary-50 grid place-items-center font-display font-bold text-primary-600">
+                    {product.brand.name.charAt(0)}
+                  </span>
+                  <div>
+                    <div className="font-semibold">{product.brand.name}</div>
+                    <div className="text-xs text-neutral-500">Official Store · 4.8 ★</div>
+                  </div>
+                  <button className="ml-auto px-3 py-1.5 border border-primary-600 text-primary-600 rounded-lg text-xs font-medium hover:bg-primary-50">ดูร้าน</button>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="bg-white rounded-2xl border border-neutral-200 p-5 space-y-3 text-sm">
               <div className="flex items-center gap-2">
                 <Shield className="w-5 h-5 text-green-600 shrink-0" />
-                <span>รับประกันของแท้ 100%</span>
+                <span>รับประกันของแท้ {Math.max(1, Math.round(product.warranty_months / 12))} ปี</span>
               </div>
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-green-600 shrink-0" />
@@ -423,12 +388,28 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
 
         {/* Related products */}
-        <section className="max-w-[1440px] mx-auto px-6 py-8">
-          <h2 className="font-display font-bold text-2xl mb-5">สินค้าที่คุณอาจสนใจ</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {RELATED.map((r, i) => <ProductCard key={i} {...r} />)}
-          </div>
-        </section>
+        {related.length > 0 && (
+          <section className="max-w-[1440px] mx-auto px-6 py-8">
+            <h2 className="font-display font-bold text-2xl mb-5">สินค้าที่คุณอาจสนใจ</h2>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {related.map((r) => {
+                const price = r.is_flash_sale && r.flash_sale_price != null ? r.flash_sale_price : r.base_price;
+                return (
+                  <ProductCard
+                    key={r.id}
+                    icon={iconForProduct(r.slug)}
+                    name={r.title_th}
+                    slug={r.slug}
+                    price={price}
+                    original={r.compare_at_price ?? undefined}
+                    rating={r.rating_average}
+                    reviews={r.rating_count}
+                  />
+                );
+              })}
+            </div>
+          </section>
+        )}
       </main>
       <SiteFooter />
     </>

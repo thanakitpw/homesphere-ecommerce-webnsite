@@ -1,8 +1,16 @@
+"use client";
+
 import Link from "next/link";
-import { Mail, Lock, Eye, ArrowRight } from "lucide-react";
+import { useActionState } from "react";
+import { Mail, Lock, Eye, ArrowRight, AlertCircle, Loader2 } from "lucide-react";
 import { IconFacebook, IconLine } from "@/components/icons/brand";
+import { loginAction, type AuthState } from "@/lib/actions/auth";
+
+const INITIAL_STATE: AuthState = {};
 
 export default function LoginPage() {
+  const [state, formAction, pending] = useActionState(loginAction, INITIAL_STATE);
+
   return (
     <div>
       <h1 className="font-display font-bold text-3xl text-neutral-900 mb-2">ยินดีต้อนรับกลับมา</h1>
@@ -20,21 +28,32 @@ export default function LoginPage() {
         <div className="flex-1 h-px bg-neutral-200" />
       </div>
 
-      <form className="space-y-4">
-        <Field label="อีเมล" icon={Mail} type="email" placeholder="your@email.com" autoComplete="email" />
+      {state.error && (
+        <div className="mb-4 flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{state.error}</span>
+        </div>
+      )}
+
+      <form action={formAction} className="space-y-4">
+        <Field name="email" label="อีเมล" icon={Mail} type="email" placeholder="your@email.com" autoComplete="email" required />
         <div>
-          <Field label="รหัสผ่าน" icon={Lock} type="password" placeholder="••••••••" autoComplete="current-password" rightIcon={Eye} />
+          <Field name="password" label="รหัสผ่าน" icon={Lock} type="password" placeholder="••••••••" autoComplete="current-password" rightIcon={Eye} required />
           <div className="mt-2 flex items-center justify-between">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" className="accent-primary-600" />
+              <input type="checkbox" name="remember" className="accent-primary-600" />
               <span>จำฉันไว้</span>
             </label>
             <Link href="/forgot-password" className="text-sm text-primary-600 hover:underline">ลืมรหัสผ่าน?</Link>
           </div>
         </div>
 
-        <button className="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 rounded-xl inline-flex items-center justify-center gap-2 transition">
-          เข้าสู่ระบบ <ArrowRight className="w-4 h-4" />
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full bg-primary-600 hover:bg-primary-700 disabled:bg-primary-300 text-white font-semibold py-3 rounded-xl inline-flex items-center justify-center gap-2 transition"
+        >
+          {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <>เข้าสู่ระบบ <ArrowRight className="w-4 h-4" /></>}
         </button>
       </form>
 
@@ -49,14 +68,14 @@ export default function LoginPage() {
   );
 }
 
-/* ─────────────── helpers ─────────────── */
 function Field({
-  label, icon: Icon, rightIcon: RightIcon, type = "text", placeholder, autoComplete,
+  name, label, icon: Icon, rightIcon: RightIcon, type = "text", placeholder, autoComplete, required,
 }: {
+  name: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   rightIcon?: React.ComponentType<{ className?: string }>;
-  type?: string; placeholder?: string; autoComplete?: string;
+  type?: string; placeholder?: string; autoComplete?: string; required?: boolean;
 }) {
   return (
     <label className="block">
@@ -64,7 +83,8 @@ function Field({
       <div className="relative">
         <Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <input
-          type={type} placeholder={placeholder} autoComplete={autoComplete}
+          name={name}
+          type={type} placeholder={placeholder} autoComplete={autoComplete} required={required}
           className="w-full border border-neutral-200 rounded-xl pl-10 pr-10 py-3 text-sm outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-100"
         />
         {RightIcon && (
@@ -79,7 +99,7 @@ function Field({
 
 function SocialButton({ icon, label }: { icon: React.ReactNode; label: string }) {
   return (
-    <button className="flex items-center justify-center gap-2 border border-neutral-200 rounded-xl py-2.5 text-sm hover:border-neutral-400 hover:bg-neutral-50 transition">
+    <button type="button" className="flex items-center justify-center gap-2 border border-neutral-200 rounded-xl py-2.5 text-sm hover:border-neutral-400 hover:bg-neutral-50 transition">
       {icon}
       <span className="hidden sm:inline">{label}</span>
     </button>

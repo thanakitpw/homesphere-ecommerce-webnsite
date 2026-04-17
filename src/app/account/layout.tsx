@@ -1,10 +1,12 @@
 import Link from "next/link";
 import {
   User, Package, MapPin, Heart, Bell, CreditCard,
-  Settings, LogOut, BadgeCheck, Wallet, Ticket,
+  Settings, LogOut, BadgeCheck, Wallet, Ticket, Phone,
 } from "lucide-react";
 import { AnnouncementBar, SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { getCurrentUser } from "@/lib/queries/user";
+import { logoutAction } from "@/lib/actions/auth";
 
 const NAV = [
   { section: "บัญชีของฉัน", items: [
@@ -25,7 +27,12 @@ const NAV = [
   ]},
 ];
 
-export default function AccountLayout({ children }: { children: React.ReactNode }) {
+export default async function AccountLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
+  const displayName = user?.full_name || user?.email.split("@")[0] || "สมาชิก";
+  const initial = displayName.charAt(0).toUpperCase();
+  const tierLabel = (user?.tier ?? "bronze").toUpperCase();
+
   return (
     <>
       <AnnouncementBar />
@@ -37,26 +44,26 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             {/* User card */}
             <div className="bg-white rounded-2xl border border-neutral-200 p-5">
               <div className="flex items-center gap-3">
-                <span className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white grid place-items-center font-display font-bold text-xl">ส</span>
+                <span className="w-14 h-14 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white grid place-items-center font-display font-bold text-xl">{initial}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm truncate">สมชาย ใจดี</div>
-                  <div className="text-xs text-neutral-500 truncate">somchai@email.com</div>
+                  <div className="font-semibold text-sm truncate">{displayName}</div>
+                  <div className="text-xs text-neutral-500 truncate">{user?.email ?? ""}</div>
                   <span className="inline-flex items-center gap-1 text-[10px] bg-gradient-to-r from-orange-500 to-orange-600 text-white px-2 py-0.5 rounded mt-1 font-bold">
-                    <BadgeCheck className="w-3 h-3" /> GOLD MEMBER
+                    <BadgeCheck className="w-3 h-3" /> {tierLabel} MEMBER
                   </span>
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-neutral-100 grid grid-cols-3 gap-2 text-center text-xs">
                 <Link href="/account/orders" className="block">
-                  <div className="font-bold text-primary-700">24</div>
+                  <div className="font-bold text-primary-700">0</div>
                   <div className="text-neutral-500">คำสั่งซื้อ</div>
                 </Link>
                 <Link href="/account/points" className="block">
-                  <div className="font-bold text-orange-600">1,250</div>
+                  <div className="font-bold text-orange-600">{(user?.points_balance ?? 0).toLocaleString()}</div>
                   <div className="text-neutral-500">Points</div>
                 </Link>
                 <Link href="/account/coupons" className="block">
-                  <div className="font-bold text-primary-700">5</div>
+                  <div className="font-bold text-primary-700">0</div>
                   <div className="text-neutral-500">คูปอง</div>
                 </Link>
               </div>
@@ -86,9 +93,11 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
                 </div>
               ))}
               <div className="border-t border-neutral-100 px-5 py-3">
-                <button className="flex items-center gap-3 text-sm text-red-600 hover:text-red-700 w-full">
-                  <LogOut className="w-4 h-4" /> ออกจากระบบ
-                </button>
+                <form action={logoutAction}>
+                  <button type="submit" className="flex items-center gap-3 text-sm text-red-600 hover:text-red-700 w-full">
+                    <LogOut className="w-4 h-4" /> ออกจากระบบ
+                  </button>
+                </form>
               </div>
             </nav>
 
@@ -96,7 +105,7 @@ export default function AccountLayout({ children }: { children: React.ReactNode 
             <div className="bg-primary-50 border border-primary-100 rounded-xl p-4 text-xs">
               <div className="font-semibold text-primary-900 mb-1">ต้องการความช่วยเหลือ?</div>
               <p className="text-neutral-600 mb-2">Call Center 24 ชม. ช่วยได้ทุกเรื่อง</p>
-              <a href="tel:1284" className="font-semibold text-primary-600">📞 1284</a>
+              <a href="tel:1284" className="font-semibold text-primary-600 inline-flex items-center gap-1"><Phone className="w-3.5 h-3.5" /> 1284</a>
             </div>
           </aside>
 

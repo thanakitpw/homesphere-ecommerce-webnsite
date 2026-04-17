@@ -1,17 +1,67 @@
 import Image from "next/image";
+import Link from "next/link";
 import {
   ChevronLeft, ChevronRight,
   Wrench, Truck, Store, CreditCard, BadgeCheck, ArrowRight,
   Refrigerator, UtensilsCrossed, Bath, Sofa, LampCeiling, Trees,
-  Hammer, HousePlug, Bed, Utensils, Briefcase,
+  Hammer, HousePlug, Bed, Utensils, Briefcase, Package,
   Sparkles, CircleDashed, Snowflake, Warehouse, Landmark, Gem,
   Wind, Lightbulb, ShowerHead, Zap, Gift, RefreshCcw, Star,
   Camera, Library, Microwave, Droplet, Armchair, QrCode,
+  type LucideIcon,
 } from "lucide-react";
 import { AnnouncementBar, SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { ProductCard } from "@/components/product-card";
 import { IconApple, IconGooglePlay } from "@/components/icons/brand";
+import { getHomeCategories, getFlashSaleProducts, getTrendingProducts, getNewArrivals, type HomeProduct } from "@/lib/queries/home";
+
+// Lucide icon name → component (for dynamic category icons)
+const LUCIDE_ICONS: Record<string, LucideIcon> = {
+  refrigerator: Refrigerator,
+  "utensils-crossed": UtensilsCrossed,
+  bath: Bath,
+  "shower-head": ShowerHead,
+  shower: ShowerHead,
+  sofa: Sofa,
+  "lamp-ceiling": LampCeiling,
+  trees: Trees,
+  hammer: Hammer,
+  "house-plug": HousePlug,
+  wind: Wind,
+  bed: Bed,
+  utensils: Utensils,
+  briefcase: Briefcase,
+  camera: Camera,
+  library: Library,
+  microwave: Microwave,
+  droplet: Droplet,
+  armchair: Armchair,
+  lightbulb: Lightbulb,
+  "package": Package,
+};
+
+// Map a product icon fallback from slug/category
+function iconForProduct(slug: string): LucideIcon {
+  if (slug.includes("aircon") || slug.includes("fan") || slug.includes("air")) return Wind;
+  if (slug.includes("fridge") || slug.includes("refrigerator")) return Refrigerator;
+  if (slug.includes("lamp") || slug.includes("light") || slug.includes("pendant")) return LampCeiling;
+  if (slug.includes("bed") || slug.includes("mattress")) return Bed;
+  if (slug.includes("sofa") || slug.includes("chair") || slug.includes("armchair")) return Armchair;
+  if (slug.includes("microwave") || slug.includes("fryer") || slug.includes("oven")) return Microwave;
+  if (slug.includes("shower") || slug.includes("faucet")) return ShowerHead;
+  if (slug.includes("drill") || slug.includes("ladder") || slug.includes("hammer")) return Hammer;
+  if (slug.includes("cctv") || slug.includes("camera")) return Camera;
+  if (slug.includes("filter") || slug.includes("water")) return Droplet;
+  if (slug.includes("kitchen") || slug.includes("pot") || slug.includes("pan")) return UtensilsCrossed;
+  if (slug.includes("shelf") || slug.includes("bookshelf")) return Library;
+  if (slug.includes("patio") || slug.includes("garden")) return Trees;
+  return Package;
+}
+
+function priceFor(p: HomeProduct) {
+  return p.is_flash_sale && p.flash_sale_price != null ? p.flash_sale_price : p.base_price;
+}
 
 /* ============================================================
    HOMESPHERE — Home Page (14 sections)
@@ -112,13 +162,29 @@ function ServiceCalloutBar() {
 }
 
 /* ─────────────── Flash Sale ─────────────── */
-function FlashSale() {
-  const items = [
-    { icon: Wind, image: "/seed/flash-sale/aeris-aircon.png", name: "แอร์ Aeris 12000 BTU", price: 9990, original: 15900, discount: 37, sold: 78 },
-    { icon: Refrigerator, name: "ตู้เย็น Stella 7.6Q", price: 8490, original: 12900, discount: 34, sold: 65 },
-    { icon: LampCeiling, name: "โคมเพดาน Luma LED", price: 1990, original: 3590, discount: 45, sold: 92 },
-    { icon: Bed, name: "ที่นอน Haven 5 ฟุต", price: 7990, original: 13900, discount: 42, sold: 54 },
-    { icon: Microwave, name: "ไมโครเวฟ Pomme 23L", price: 3290, original: 4990, discount: 34, sold: 41 },
+async function FlashSale() {
+  const dbItems = await getFlashSaleProducts();
+  const items = dbItems.length > 0 ? dbItems.map((p) => {
+    const currentPrice = priceFor(p);
+    const originalPrice = p.compare_at_price ?? p.base_price;
+    const discount = originalPrice > currentPrice ? Math.round((1 - currentPrice / originalPrice) * 100) : 0;
+    return {
+      icon: iconForProduct(p.slug),
+      image: p.slug.includes("aircon") ? "/seed/flash-sale/aeris-aircon.png" : undefined,
+      name: p.title_th,
+      slug: p.slug,
+      price: currentPrice,
+      original: originalPrice,
+      discount,
+      sold: Math.min(95, 30 + (p.sales_count % 65)),
+    };
+  }) : [
+    // Fallback if DB empty
+    { icon: Wind, image: "/seed/flash-sale/aeris-aircon.png", name: "แอร์ Aeris 12000 BTU", slug: "aeris-smart-aircon-18000", price: 9990, original: 15900, discount: 37, sold: 78 },
+    { icon: Refrigerator, name: "ตู้เย็น Stella 7.6Q", slug: "stella-french-fridge", price: 8490, original: 12900, discount: 34, sold: 65 },
+    { icon: LampCeiling, name: "โคมเพดาน Luma LED", slug: "luma-pendant", price: 1990, original: 3590, discount: 45, sold: 92 },
+    { icon: Bed, name: "ที่นอน Haven 5 ฟุต", slug: "haven-mattress", price: 7990, original: 13900, discount: 42, sold: 54 },
+    { icon: Microwave, name: "ไมโครเวฟ Pomme 23L", slug: "pomme-microwave", price: 3290, original: 4990, discount: 34, sold: 41 },
   ];
   return (
     <section className="max-w-[1440px] mx-auto px-6 py-10">
@@ -149,12 +215,12 @@ function FlashSale() {
   );
 }
 
-function FlashCard({ icon: Icon, image, name, price, original, discount, sold }: {
+function FlashCard({ icon: Icon, image, name, slug, price, original, discount, sold }: {
   icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
-  image?: string; name: string; price: number; original: number; discount: number; sold: number;
+  image?: string; name: string; slug?: string; price: number; original: number; discount: number; sold: number;
 }) {
   return (
-    <a href="/product/aeris-aircon-12000btu" className="block bg-white text-neutral-900 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition group">
+    <Link href={`/product/${slug ?? "aeris-aircon-12000btu"}`} className="block bg-white text-neutral-900 rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:-translate-y-0.5 transition group">
       <div className="aspect-square bg-gradient-to-br from-neutral-100 to-neutral-200 relative grid place-items-center">
         {image ? (
           <Image src={image} alt={name} fill sizes="(max-width: 768px) 50vw, 20vw" className="object-cover" />
@@ -176,47 +242,66 @@ function FlashCard({ icon: Icon, image, name, price, original, discount, sold }:
           <p className="text-[10px] text-neutral-500 mt-1">ขายแล้ว {sold} ชิ้น</p>
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
 
 /* ─────────────── Circular Categories ─────────────── */
-function CircularCategories() {
-  const cats = [
-    { icon: Refrigerator, label: "เครื่องใช้ไฟฟ้า", slug: "appliances" },
-    { icon: UtensilsCrossed, label: "ห้องครัว", slug: "kitchen" },
-    { icon: Bath, label: "ห้องน้ำ", slug: "bathroom" },
-    { icon: Sofa, label: "เฟอร์นิเจอร์", slug: "furniture" },
-    { icon: LampCeiling, label: "ไฟและโคมไฟ", slug: "lighting" },
-    { icon: Trees, label: "แต่งสวน", slug: "garden" },
-    { icon: Hammer, label: "เครื่องมือช่าง", slug: "tools" },
-    { icon: HousePlug, label: "สมาร์ทโฮม", slug: "smart-home" },
-  ];
+async function CircularCategories() {
+  const dbCats = await getHomeCategories();
+  const cats = dbCats.length > 0
+    ? dbCats.map((c) => ({
+        icon: (c.icon_name ? LUCIDE_ICONS[c.icon_name] : undefined) ?? Package,
+        label: c.title_th,
+        slug: c.slug,
+      }))
+    : [
+        { icon: Refrigerator, label: "เครื่องใช้ไฟฟ้า", slug: "appliances" },
+        { icon: UtensilsCrossed, label: "ห้องครัว", slug: "kitchen" },
+        { icon: Bath, label: "ห้องน้ำ", slug: "bathroom" },
+        { icon: Sofa, label: "เฟอร์นิเจอร์", slug: "furniture" },
+        { icon: LampCeiling, label: "ไฟและโคมไฟ", slug: "lighting" },
+        { icon: Trees, label: "แต่งสวน", slug: "garden" },
+        { icon: Hammer, label: "เครื่องมือช่าง", slug: "tools" },
+        { icon: HousePlug, label: "สมาร์ทโฮม", slug: "smart-home" },
+      ];
   return (
     <section className="max-w-[1440px] mx-auto px-6 py-10">
       <h2 className="font-display font-bold text-2xl mb-6">เลือกหมวดสินค้า</h2>
       <div className="grid grid-cols-4 md:grid-cols-8 gap-4">
-        {cats.map((c, i) => (
-          <a key={i} href={`/category/${c.slug}`} className="flex flex-col items-center gap-2 group">
-            <div className="w-24 h-24 rounded-full bg-primary-50 grid place-items-center group-hover:bg-primary-100 group-hover:scale-105 transition">
-              <c.icon className="w-10 h-10 text-primary-600" strokeWidth={1.8} />
-            </div>
-            <span className="text-xs text-center text-neutral-700 group-hover:text-primary-600 font-medium">{c.label}</span>
-          </a>
-        ))}
+        {cats.map((c, i) => {
+          const Icon = c.icon;
+          return (
+            <a key={i} href={`/category/${c.slug}`} className="flex flex-col items-center gap-2 group">
+              <div className="w-24 h-24 rounded-full bg-primary-50 grid place-items-center group-hover:bg-primary-100 group-hover:scale-105 transition">
+                <Icon className="w-10 h-10 text-primary-600" strokeWidth={1.8} />
+              </div>
+              <span className="text-xs text-center text-neutral-700 group-hover:text-primary-600 font-medium">{c.label}</span>
+            </a>
+          );
+        })}
       </div>
     </section>
   );
 }
 
 /* ─────────────── Trending ─────────────── */
-function TrendingProducts() {
-  const items = [
-    { icon: Armchair, name: "โซฟา Haven 3 ที่นั่ง", price: 24900, rating: 4.8, reviews: 128 },
-    { icon: Wind, name: "พัดลมตั้งพื้น Aeris 16''", price: 1990, rating: 4.6, reviews: 89 },
-    { icon: ShowerHead, name: "ก๊อกฝักบัว Vessel Premium", price: 3490, rating: 4.9, reviews: 201 },
-    { icon: Lightbulb, name: "หลอดไฟ LED Luma 9W x4", price: 490, rating: 4.5, reviews: 312 },
-    { icon: UtensilsCrossed, name: "ชุดเครื่องครัว Kisho 5 ชิ้น", price: 2890, rating: 4.7, reviews: 154 },
+async function TrendingProducts() {
+  const dbItems = await getTrendingProducts(5);
+  const items = dbItems.length > 0 ? dbItems.map((p) => ({
+    icon: iconForProduct(p.slug),
+    name: p.title_th,
+    slug: p.slug,
+    price: priceFor(p),
+    original: p.compare_at_price ?? undefined,
+    rating: p.rating_average,
+    reviews: p.rating_count,
+  })) : [
+    { icon: Armchair, name: "โซฟา Haven 3 ที่นั่ง", slug: "haven-sofa-3seat", price: 24900, rating: 4.8, reviews: 128 },
+    { icon: Wind, name: "พัดลมตั้งพื้น Aeris 16''", slug: "aeris-floor-fan", price: 1990, rating: 4.6, reviews: 89 },
+    { icon: ShowerHead, name: "ก๊อกฝักบัว Vessel Premium", slug: "vessel-shower-faucet", price: 3490, rating: 4.9, reviews: 201 },
+    { icon: Lightbulb, name: "หลอดไฟ LED Luma 9W x4", slug: "luma-led-bulb", price: 490, rating: 4.5, reviews: 312 },
+    { icon: UtensilsCrossed, name: "ชุดเครื่องครัว Kisho 5 ชิ้น", slug: "kisho-kitchen-set", price: 2890, rating: 4.7, reviews: 154 },
   ];
   return (
     <section className="max-w-[1440px] mx-auto px-6 py-10">
@@ -334,13 +419,23 @@ function PromoStrip() {
 }
 
 /* ─────────────── New Arrivals ─────────────── */
-function NewArrivals() {
-  const items = [
-    { icon: Camera, name: "กล้องวงจรปิด Nimbus 4K", price: 2990, rating: 4.7, reviews: 76, badge: "NEW" },
-    { icon: Library, name: "ชั้นวางหนังสือ Arbor 5 ชั้น", price: 4590, rating: 4.6, reviews: 54, badge: "NEW" },
-    { icon: Microwave, name: "หม้อทอด Pomme 6Q", price: 2490, rating: 4.8, reviews: 92, badge: "NEW" },
-    { icon: Droplet, name: "เครื่องกรองน้ำ Aeris RO", price: 8990, rating: 4.9, reviews: 31, badge: "NEW" },
-    { icon: Armchair, name: "เก้าอี้ทำงาน Haven Ergo", price: 5490, rating: 4.7, reviews: 48, badge: "NEW" },
+async function NewArrivals() {
+  const dbItems = await getNewArrivals(5);
+  const items = dbItems.length > 0 ? dbItems.map((p) => ({
+    icon: iconForProduct(p.slug),
+    name: p.title_th,
+    slug: p.slug,
+    price: priceFor(p),
+    original: p.compare_at_price ?? undefined,
+    rating: p.rating_average,
+    reviews: p.rating_count,
+    badge: "NEW",
+  })) : [
+    { icon: Camera, name: "กล้องวงจรปิด Nimbus 4K", slug: "nimbus-cctv-4k", price: 2990, rating: 4.7, reviews: 76, badge: "NEW" },
+    { icon: Library, name: "ชั้นวางหนังสือ Arbor 5 ชั้น", slug: "arbor-bookshelf", price: 4590, rating: 4.6, reviews: 54, badge: "NEW" },
+    { icon: Microwave, name: "หม้อทอด Pomme 6Q", slug: "pomme-air-fryer", price: 2490, rating: 4.8, reviews: 92, badge: "NEW" },
+    { icon: Droplet, name: "เครื่องกรองน้ำ Aeris RO", slug: "aeris-water-filter", price: 8990, rating: 4.9, reviews: 31, badge: "NEW" },
+    { icon: Armchair, name: "เก้าอี้ทำงาน Haven Ergo", slug: "haven-ergo-chair", price: 5490, rating: 4.7, reviews: 48, badge: "NEW" },
   ];
   return (
     <section className="max-w-[1440px] mx-auto px-6 py-10">
